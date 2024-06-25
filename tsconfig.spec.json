@@ -8,6 +8,12 @@
       "jasmine"
     ]
   },
+  //dodaeno
+  "files": [
+    "src/test.ts",
+    "src/polyfills.ts"
+  ],
+  //dodaeno od 12 do 15 red
   "include": [
     "src/**/*.spec.ts",
     "src/**/*.d.ts"
