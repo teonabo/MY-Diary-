@@ -1,25 +1,25 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const DiaryEntryModel = require('./entry-schema');
-const mongoose = require ('mongoose');
-const UserModel = require ('./user-model');
-const bcrypt = require ('bcrypt');
-const jwt = require ('jsonwebtoken');
+const mongoose = require('mongoose');
+const UserModel = require('./user-model');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
-const app = express ();
-mongoose.connect('')
-.then(() => {
-    console.log('Connected to MongoDB')
-})
-.catch(() => {
-    console.log('Error connecting to MongoDB')
-})
+const app = express();
+mongoose.connect("mongodb+srv://simona:buildingameanapplication@cluster0.txlwmxo.mongodb.net/diarydb?retryWrites=true&w=majority&appName=Cluster0")  
+    .then(() => {
+        console.log('Connected to MongoDB')
+    })
+    .catch(() => {
+        console.log('Error connecting to MongoDB');
+    })
 
 app.use(bodyParser.json());
 app.use((req, res, next) => {
-    res.setHeader('Access-Contol-Allow-Origin', '*');
-    res.setHeader('Access-Contol-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-    res.setHeader('Access-Contol-Allow-Methods', 'GET, PUT, POST, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     next();
 })
 
@@ -32,18 +32,18 @@ app.delete('/remove-entry/:id', (req, res) => {
     })
 })
 
-app.put('update-entry/:id', (req, res)=> {
-    const updateEntry = new DiaryEntryModel({_id: req.body.id, date: req.body.date, entry: req.body.entry})
-    DiaryEntryModel.updateEntry({_id: req.body.id}, updateEntry)
-    .then(() => {
-        res.status(200).json({
-            message: 'Update completed'
+app.put('/update-entry/:id', (req, res) => {
+    const updatedEntry = new DiaryEntryModel({_id: req.body.id, date: req.body.date, entry: req.body.entry})
+    DiaryEntryModel.updateOne({_id: req.body.id}, updatedEntry)
+        .then(() => {
+            res.status(200).json({
+                message: 'Update completed'
+            })    
         })
-    })
 })
 
-app.post('/add-entry', (req, res) => {
-
+app.post('/add-entry', (req, res, next) => {
+   
     try{
         const token = req.headers.authorization;
         jwt.verify(token, "secret_string")
@@ -58,14 +58,14 @@ app.post('/add-entry', (req, res) => {
 }, (req,res) => {
     const diaryEntry = new DiaryEntryModel({date: req.body.date, entry: req.body.entry});
     diaryEntry.save()
-    .then(() => {
-        res.status(200).json({
-            message: 'Post submitted'
+        .then(() => {
+            res.status(200).json({
+                message: 'Post submitted'
+            })
         })
-    })
 })
 
-app.get('/diary-etries', (req, res, next) => {
+app.get('/diary-entries',(req, res, next) => {
     DiaryEntryModel.find()
     .then((data) => {
         res.json({'diaryEntries': data});
@@ -75,44 +75,44 @@ app.get('/diary-etries', (req, res, next) => {
     })
 })
 
-app.post('/sign-up', (req, res) => {
+app.post('/sign-up', (req,res) => {
 
     bcrypt.hash(req.body.password, 10)
-    .then(hash => {
-        const UserModel = new UserModel({
-            username: req.body.username,
-            password: hash
-        })
+        .then(hash => {
+            const userModel = new UserModel({
+                username: req.body.username,
+                password: hash
+            })
 
-        UserModel.save()
-        .then(result => {
-            res.status(201).json({
-                message: 'User created',
-                result: result
+            userModel.save()
+            .then(result => {
+                res.status(201).json({
+                    message: 'User created',
+                    result: result
+                })
+            })
+            .catch(err => {
+                res.status(500).json({
+                    error: err
+                })
             })
         })
-        .catch(err => {
-            res.status(500).json({
-                error:err
-            })
-        })
-    })
 })
 
-app.post('/login', (req, res) => {
+app.post('/login', (req,res) => {
 
     let userFound;
 
     UserModel.findOne({username: req.body.username})
-    .then(user => {
-        if(!user){
-            return res.status(401).json({
-                message: 'User not found'
-            })
-        }
-        userFound = user
-        return bcrypt.compare(req.body.password, user.password)
-    })
+        .then(user => {
+            if(!user){
+                return res.status(401).json({
+                    message: 'User not found'
+                })
+            }
+            userFound = user
+            return bcrypt.compare(req.body.password, user.password)
+        })
     .then(result => {
         if(!result){
             return res.status(401).json({
@@ -122,14 +122,15 @@ app.post('/login', (req, res) => {
 
         const token = jwt.sign({username: userFound.username, userId: userFound._id}, "secret_string", {expiresIn:"1h"})
         return res.status(200).json({
-            token: token
+            token: token,
+            expiresIn: 3600
         })
     })
     .catch(err => {
-    return res.status(401).json({
-        message: 'Error with authentication'
+        return res.status(401).json({
+            message: 'Error with authentication'
+        })
     })
-})
 })
 
 module.exports = app;

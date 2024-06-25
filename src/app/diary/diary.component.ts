@@ -1,23 +1,22 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { DiaryDataService } from '../shared/diary-data.component';
-import { DiaryEntry } from '../shared/diary-entry.model';
-import { Subscription } from 'rxjs';
 import { Router } from '@angular/router';
-import {AuthService} from '../shared/auth-service';
+import { Subscription } from 'rxjs';
+import { AuthService } from '../shared/auth-service';
+import { DiaryEntry } from '../shared/dairy-entry.model';
+import { DiaryDataService } from '../shared/diary-data.component';
 
 @Component({
   selector: 'app-diary',
   templateUrl: './diary.component.html',
-  styleUrl: './diary.component.css'
+  styleUrls: ['./diary.component.css']
 })
 export class DiaryComponent implements OnInit, OnDestroy {
-  [x: string]: any;
 
   private authenticationSub: Subscription;
   isAuthenticated = false;
 
-  constructor(private diaryDataService: DiaryDataService, private router:Router, private authService: AuthService) { }
-
+  constructor(private diaryDataService: DiaryDataService, private router: Router, private authService: AuthService) { }
+  
   ngOnDestroy(): void {
     this.diaryEntriesSub.unsubscribe();
     this.authenticationSub.unsubscribe();
@@ -29,7 +28,7 @@ export class DiaryComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.diaryDataService.getDiaryEntries();
     this.diaryEntriesSub = this.diaryDataService.diarySubject.subscribe(entries => {
-      this.diaryEntries=entries;
+      this.diaryEntries = entries;
     })
     this.authenticationSub = this.authService.getAuthenticatedSub().subscribe(status => {
       this.isAuthenticated = status;
@@ -42,6 +41,6 @@ export class DiaryComponent implements OnInit, OnDestroy {
   }
 
   onEdit(id: string){
-    this.router.navigate(["edit", id])
+    this.router.navigate(['edit',id])
   }
 }
